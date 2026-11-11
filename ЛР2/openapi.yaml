@@ -1,0 +1,775 @@
+openapi: 3.0.3
+info:
+  title: Collection Tracker API
+  version: 1.0.0
+  description: >
+    REST API для трекера личных коллекций книг, виниловых пластинок
+    и настольных игр. Лабораторная работа № 2.
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Локальный сервер разработки
+tags:
+  - name: Auth
+    description: Регистрация и аутентификация
+  - name: Profile
+    description: Профиль коллекционера
+  - name: Collections
+    description: Коллекции пользователя
+  - name: Items
+    description: Предметы коллекций
+  - name: Attributes
+    description: Кастомные атрибуты предметов
+security:
+  - BearerAuth: []
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Регистрация коллекционера
+      operationId: registerUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Пользователь успешно зарегистрирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Вход в систему
+      operationId: loginUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Выход из системы
+      operationId: logoutUser
+      responses:
+        '204':
+          description: Сессия завершена
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /profiles/{username}:
+    get:
+      tags: [Profile]
+      summary: Получение публичного профиля
+      operationId: getPublicProfile
+      security: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          description: Имя пользователя
+          schema:
+            type: string
+            minLength: 3
+            maxLength: 50
+      responses:
+        '200':
+          description: Публичный профиль
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /profile:
+    get:
+      tags: [Profile]
+      summary: Получение собственного профиля
+      operationId: getMyProfile
+      responses:
+        '200':
+          description: Профиль текущего пользователя
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    patch:
+      tags: [Profile]
+      summary: Частичное изменение собственного профиля
+      operationId: updateMyProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Профиль обновлён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /collections:
+    get:
+      tags: [Collections]
+      summary: Получение коллекций текущего пользователя
+      operationId: listCollections
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Список коллекций
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [Collections]
+      summary: Создание коллекции
+      operationId: createCollection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCollectionRequest'
+      responses:
+        '201':
+          description: Коллекция создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /collections/{collectionId}:
+    parameters:
+      - name: collectionId
+        in: path
+        required: true
+        description: UUID коллекции
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Collections]
+      summary: Получение коллекции
+      operationId: getCollection
+      responses:
+        '200':
+          description: Данные коллекции
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Collections]
+      summary: Частичное изменение коллекции
+      operationId: updateCollection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCollectionRequest'
+      responses:
+        '200':
+          description: Коллекция обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Collections]
+      summary: Удаление коллекции
+      operationId: deleteCollection
+      responses:
+        '204':
+          description: Коллекция удалена
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /items:
+    get:
+      tags: [Items]
+      summary: Поиск и фильтрация предметов текущего пользователя
+      operationId: listItems
+      parameters:
+        - name: collectionId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: type
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/ItemType'
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/ItemStatus'
+        - name: search
+          in: query
+          required: false
+          description: Поиск по названию или автору/создателю
+          schema:
+            type: string
+            maxLength: 100
+      responses:
+        '200':
+          description: Список предметов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [Items]
+      summary: Добавление предмета в коллекцию
+      operationId: createItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateItemRequest'
+      responses:
+        '201':
+          description: Предмет создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /items/{itemId}:
+    parameters:
+      - name: itemId
+        in: path
+        required: true
+        description: UUID предмета
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Items]
+      summary: Получение предмета
+      operationId: getItem
+      responses:
+        '200':
+          description: Данные предмета
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Items]
+      summary: Частичное изменение предмета или его статуса
+      operationId: updateItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateItemRequest'
+      responses:
+        '200':
+          description: Предмет обновлён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Items]
+      summary: Удаление предмета
+      operationId: deleteItem
+      responses:
+        '204':
+          description: Предмет удалён
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /items/{itemId}/attributes:
+    post:
+      tags: [Attributes]
+      summary: Добавление кастомного атрибута предмета
+      operationId: createItemAttribute
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          description: UUID предмета
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateItemAttributeRequest'
+      responses:
+        '201':
+          description: Атрибут добавлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemAttributeResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /items/{itemId}/attributes/{attributeValueId}:
+    parameters:
+      - name: itemId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: attributeValueId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    delete:
+      tags: [Attributes]
+      summary: Удаление кастомного атрибута предмета
+      operationId: deleteItemAttribute
+      responses:
+        '204':
+          description: Атрибут удалён
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    BadRequest:
+      description: Ошибка валидации входных данных
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Пользователь не аутентифицирован
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Недостаточно прав для выполнения действия
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Конфликт данных, например email или username уже заняты
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [username, email, password]
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+          example: booklover
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: StrongPass123
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          example: StrongPass123
+    AuthResponse:
+      type: object
+      required: [accessToken, tokenType, user]
+      properties:
+        accessToken:
+          type: string
+          description: Токен доступа
+          example: eyJhbGciOiJIUzI1NiJ9.example.signature
+        tokenType:
+          type: string
+          example: Bearer
+        user:
+          $ref: '#/components/schemas/UserResponse'
+    UserResponse:
+      type: object
+      required: [id, username, email, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+        username:
+          type: string
+          example: booklover
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        createdAt:
+          type: string
+          format: date-time
+    ProfileResponse:
+      type: object
+      required: [username, displayName, isPublic]
+      properties:
+        username:
+          type: string
+        displayName:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+        isPublic:
+          type: boolean
+        collections:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollectionResponse'
+    UpdateProfileRequest:
+      type: object
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 2000
+          nullable: true
+        isPublic:
+          type: boolean
+    CreateCollectionRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: Моя библиотека
+        description:
+          type: string
+          maxLength: 2000
+    UpdateCollectionRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 2000
+          nullable: true
+    CollectionResponse:
+      type: object
+      required: [id, name, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        itemCount:
+          type: integer
+          minimum: 0
+    CollectionListResponse:
+      type: object
+      required: [items, limit, offset]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollectionResponse'
+        limit:
+          type: integer
+        offset:
+          type: integer
+    ItemType:
+      type: string
+      enum: [BOOK, VINYL, BOARD_GAME]
+    ItemStatus:
+      type: string
+      enum: [IN_STOCK, LENT_TO_FRIEND, WANTED]
+    CreateItemRequest:
+      type: object
+      required: [collectionId, type, title, status]
+      properties:
+        collectionId:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/ItemType'
+        status:
+          $ref: '#/components/schemas/ItemStatus'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: The Hobbit
+        creator:
+          type: string
+          maxLength: 255
+          example: J.R.R. Tolkien
+        description:
+          type: string
+          maxLength: 5000
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemAttributeInput'
+    UpdateItemRequest:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/ItemType'
+        status:
+          $ref: '#/components/schemas/ItemStatus'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        creator:
+          type: string
+          maxLength: 255
+          nullable: true
+        description:
+          type: string
+          maxLength: 5000
+          nullable: true
+    ItemResponse:
+      type: object
+      required: [id, collectionId, type, status, title, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        collectionId:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/ItemType'
+        status:
+          $ref: '#/components/schemas/ItemStatus'
+        title:
+          type: string
+        creator:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemAttributeResponse'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ItemListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemResponse'
+        total:
+          type: integer
+          minimum: 0
+    ItemAttributeInput:
+      type: object
+      required: [name, dataType, value]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: ISBN
+        dataType:
+          type: string
+          enum: [STRING, INTEGER, NUMBER, BOOLEAN, DATE]
+        value:
+          type: string
+          example: '9780261102217'
+    CreateItemAttributeRequest:
+      allOf:
+        - $ref: '#/components/schemas/ItemAttributeInput'
+    ItemAttributeResponse:
+      type: object
+      required: [id, name, dataType, value]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        dataType:
+          type: string
+          enum: [STRING, INTEGER, NUMBER, BOOLEAN, DATE]
+        value:
+          type: string
+    ErrorResponse:
+      type: object
+      required: [code, message, timestamp]
+      properties:
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: Поле title не должно быть пустым
+        timestamp:
+          type: string
+          format: date-time
+          example: '2026-10-21T09:30:00Z'
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: title
+              issue:
+                type: string
+                example: Поле обязательно

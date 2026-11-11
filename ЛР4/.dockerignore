@@ -1,0 +1,36 @@
+# Git metadata
+.git
+.gitignore
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies and build outputs
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Logs and caches
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+__pycache__/
+.venv/
+venv/
+
+# IDE and OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Documentation is not required inside the runtime image
+README.md
+ARCHITECTURE.md
+LAB3_REPORT.md
+docs/

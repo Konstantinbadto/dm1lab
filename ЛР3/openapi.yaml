@@ -1,0 +1,44 @@
+openapi: 3.0.3
+info:
+  title: Collection Tracker API
+  version: 1.0.0
+  description: REST API for managing personal collections of books, vinyl records and board games.
+servers:
+  - url: http://localhost:8080/api/v1
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Returns basic application process status and runtime metadata.
+      tags: [Health]
+      responses:
+        '200':
+          description: Service is responding.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: pass
+                app_name: Collection Tracker API
+                version: 1.0.0
+                environment: development
+                uptime_seconds: 3
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status, app_name, version, environment, uptime_seconds]
+      properties:
+        status:
+          type: string
+          enum: [pass]
+        app_name:
+          type: string
+        version:
+          type: string
+        environment:
+          type: string
+        uptime_seconds:
+          type: integer
+          minimum: 0
